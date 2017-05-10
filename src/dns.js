@@ -1,4 +1,5 @@
 var peers = require('./peer')
+var NETWORK = require('./const').NETWORK
 var dns = require('dns')
 
 var Promise = require('promise')
@@ -8,9 +9,9 @@ var dnsSeeds = ['bitseed.xf2.org', 'dnsseed.bluematt.me', 'seed.bitcoin.sipa.be'
 var dnsTestnetSeeds = ['seed.tbtc.petertodd.org']
 
 var resolve = (network) => {
-  var seeds = network === 'mainnet' ? dnsSeeds : dnsTestnetSeeds
+  var seeds = network === NETWORK.MAINNET ? dnsSeeds : dnsTestnetSeeds
   var seedsResolved = seeds.map((seed) => dnsResolve4(seed))
-  seedsResolved.forEach((seedResolved) => seedResolved.then(peers.connect).catch(console.log))
+  seedsResolved.forEach((seedResolved) => seedResolved.then(peers.connect(network)).catch(console.log))
   return seedsResolved
 }
 
