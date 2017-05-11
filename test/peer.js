@@ -13,10 +13,22 @@ describe('Peers', function () {
       assert.strictEqual(conns.length, 1)
     })
   })
+  it('should NOT connect to 1 peer on Testnet', function () {
+    var peersConnectPromised = peer.connect(NETWORK.TESTNET)(['127.0.0.1'])
+    return Promise.all(peersConnectPromised).catch(function (err) {
+      assert.strictEqual(err.code, 'ECONNREFUSED')
+    })
+  })
   it('should connect to 1 peer on Mainnet', function () {
     var peersConnectPromised = peer.connect(NETWORK.MAINNET)(['185.50.213.123'])
     return Promise.all(peersConnectPromised).then(function (conns) {
       assert.strictEqual(conns.length, 1)
+    })
+  })
+  it('should NOT connect to 1 peer on Mainnet', function () {
+    var peersConnectPromised = peer.connect(NETWORK.MAINNET)(['127.0.0.1'])
+    return Promise.all(peersConnectPromised).catch(function (err) {
+      assert.strictEqual(err.code, 'ECONNREFUSED')
     })
   })
 })
