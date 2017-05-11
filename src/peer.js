@@ -4,23 +4,24 @@ var PORT = require('./const').PORT
 
 var peerConnection = (network) => (ip) => {
   return new Promise((resolve, reject) => {
-    var client = net.connect({
+    var socket = new net.Socket()
+    socket.connect({
       port: network === NETWORK.MAINNET ? PORT.MAINNET : PORT.TESTNET,
       host: ip
     }, () => {
       console.log('peer ' + ip + ' connected')
-      resolve()
+      resolve(socket)
     })
 
-    client.on('error', (err) => {
+    socket.on('error', (err) => {
       console.log('peer ' + ip + ' connect fail')
       reject(err)
     })
   })
 }
 
-var allPeersConnected = (peers) => {
-  console.log('All ' + peers.length + ' peers connected!')
+var allPeersConnected = (peerSockets) => {
+  console.log('All ' + peerSockets.length + ' peers connected!')
 }
 
 var connect = (network) => (ips) => {
