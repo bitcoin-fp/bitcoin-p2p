@@ -1,5 +1,7 @@
 var utils = require('./utils')
 var PORT = require('./const').PORT
+var Magic = require('./const').Magic
+var Command = require('./const').Command
 var crypto = require('crypto')
 
 var address = (ip, port) => {
@@ -36,10 +38,35 @@ var version = (opts) => {
     ver = utils.suffixBy(buf)(ver)
   })
 
+  var header = addHeader(opts.network, 'version', ver)
+  ver = utils.prefixBy(header)(ver)
+
   return ver
+}
+
+var verack = (opts) => {
+  var verack = Buffer.alloc(0)
+  return addHeader(opts.network, 'verack', verack)
+}
+
+var addHeader = (network, command, payload) => {
+  var header = Buffer.alloc(0)
+
+  var magic = Buffer.from(Magic[network.toUpperCase()])
+  var cmd = Buffer.from(Command[command.toUpperCase()])
+  var payloadLength = utils.writeUIntLE(4)(payload.length)
+  var PayloadChecksum = utils.slice(0, 4)(utils.dsha256(payload))
+
+  var chunks = [magic, cmd, payloadLength, PayloadChecksum]
+  chunks.forEach((buf) => {
+    header = utils.suffixBy(buf)(header)
+  })
+
+  return header
 }
 
 module.exports = {
   version: version,
+  verack: verack,
   address: address
 }
