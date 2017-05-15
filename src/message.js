@@ -4,6 +4,8 @@ var Magic = require('./const').Magic
 var Command = require('./const').Command
 var crypto = require('crypto')
 
+/* Address
+ */
 var address = (ip, port) => {
   var addr = Buffer.alloc(0)
 
@@ -20,6 +22,8 @@ var address = (ip, port) => {
   return addr
 }
 
+/* Version
+ */
 var version = (opts) => {
   var ver = Buffer.alloc(0)
 
@@ -44,11 +48,15 @@ var version = (opts) => {
   return ver
 }
 
+/* Verack
+ */
 var verack = (opts) => {
   var verack = Buffer.alloc(0)
   return addHeader(opts.network, 'verack', verack)
 }
 
+/* Message Header
+ */
 var addHeader = (network, command, payload) => {
   var header = Buffer.alloc(0)
 
