@@ -5,6 +5,7 @@ var Command = require('./const').Command
 var crypto = require('crypto')
 
 /* Address
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#Network_address
  */
 var address = (ip, port) => {
   var addr = Buffer.alloc(0)
@@ -23,6 +24,7 @@ var address = (ip, port) => {
 }
 
 /* Version
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#version
  */
 var version = (opts) => {
   var ver = Buffer.alloc(0)
@@ -42,22 +44,51 @@ var version = (opts) => {
     ver = utils.suffixBy(buf)(ver)
   })
 
-  var header = addHeader(opts.network, 'version', ver)
+  var header = addMessageHeader(opts.network, 'version', ver)
   ver = utils.prefixBy(header)(ver)
 
   return ver
 }
 
 /* Verack
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#verack
  */
 var verack = (opts) => {
   var verack = Buffer.alloc(0)
-  return addHeader(opts.network, 'verack', verack)
+  return addMessageHeader(opts.network, 'verack', verack)
+}
+
+/* Get Headers
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#getheaders
+ */
+var getHeaders = (opts) => {
+}
+
+/* Get Data
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#getdata
+ */
+var getData = (opts) => {
+
+}
+
+/* Headers Data
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#headers
+ */
+var headers = (headers) => {
+
+}
+
+/* Block Data
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#block
+ */
+var block = (block) => {
+
 }
 
 /* Message Header
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#Message_structure
  */
-var addHeader = (network, command, payload) => {
+var addMessageHeader = (network, command, payload) => {
   var header = Buffer.alloc(0)
 
   var magic = Buffer.from(Magic[network.toUpperCase()])
@@ -74,7 +105,15 @@ var addHeader = (network, command, payload) => {
 }
 
 module.exports = {
-  version: version,
-  verack: verack,
-  address: address
+  writer: {
+    version: version,
+    verack: verack,
+    address: address,
+    getHeaders: getHeaders,
+    getData: getData
+  },
+  reader: {
+    headers: headers,
+    block: block
+  }
 }
