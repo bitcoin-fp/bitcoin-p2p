@@ -48,6 +48,8 @@ var writeUIntLE = (length) => (integer) => {
   return b
 }
 
+var reverseHex = (hex) => hex.match(/.{2}/g).reverse().join('')
+
 module.exports = {
   dsha256: dsha256,
   prefixBy: prefixBy,
@@ -56,5 +58,6 @@ module.exports = {
   suffixTo: suffixTo,
   slice: slice,
   writeUIntBE: writeUIntBE,
-  writeUIntLE: writeUIntLE
+  writeUIntLE: writeUIntLE,
+  reverseHex: reverseHex
 }
