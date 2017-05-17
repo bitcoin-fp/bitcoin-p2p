@@ -1,4 +1,5 @@
 var utils = require('./utils')
+var Blockchain = require('./blockchain')
 var PORT = require('./const').PORT
 var Magic = require('./const').Magic
 var Command = require('./const').Command
@@ -29,7 +30,7 @@ var address = (ip, port) => {
 var version = (opts) => {
   var ver = Buffer.alloc(0)
 
-  var protocol = utils.writeUIntLE(4)(60002)
+  var protocol = utils.writeUIntLE(4)(opts.protocol)
   var service = Buffer.from([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
   var timestamp = utils.writeUIntLE(8)(opts.timestamp ? opts.timestamp : new Date().getTime())
   var addrYou = address(opts.addrYou, PORT[opts.network.toUpperCase()])
@@ -62,6 +63,23 @@ var verack = (opts) => {
  * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#getheaders
  */
 var getHeaders = (opts) => {
+  var msg = Buffer.alloc(0)
+
+  var protocol = utils.writeUIntLE(4)(opts.protocol)
+  var hashCount = utils.writeUIntLE(1)(1)
+  var highestBlock = Blockchain.getHighestBlock()
+  var highestBlockHash = Buffer.from(utils.reverseHex(highestBlock.hash), 'hex')
+  var hashStop = Buffer.alloc(32)
+
+  var chunks = [protocol, hashCount, highestBlockHash, hashStop]
+  chunks.forEach((buf) => {
+    msg = utils.suffixBy(buf)(msg)
+  })
+
+  var header = addMessageHeader(opts.network, 'getheaders', msg)
+  msg = utils.prefixBy(header)(msg)
+
+  return msg
 }
 
 /* Get Data
