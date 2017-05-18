@@ -1,4 +1,5 @@
 var crypto = require('crypto')
+var R = require('ramda')
 
 var sha256 = (data) => crypto.createHash('sha256').update(data).digest()
 
@@ -48,6 +49,20 @@ var writeUIntLE = (length) => (integer) => {
   return b
 }
 
+var writeVarInt = (integer) => {
+  var uintWriter
+  if (integer <= 253) {
+    uintWriter = writeUIntLE(1)
+  } else if (integer <= 65535) {
+    uintWriter = R.compose(prefixBy([0xFD]), writeUIntLE(2))
+  } else if (integer <= 4294967295) {
+    uintWriter = R.compose(prefixBy([0xFE]), writeUIntLE(4))
+  } else {
+    uintWriter = R.compose(prefixBy([0xFF]), writeUIntLE(8))
+  }
+  return uintWriter(integer)
+}
+
 var reverseHex = (hex) => hex.match(/.{2}/g).reverse().join('')
 
 module.exports = {
@@ -59,5 +74,6 @@ module.exports = {
   slice: slice,
   writeUIntBE: writeUIntBE,
   writeUIntLE: writeUIntLE,
+  writeVarInt: writeVarInt,
   reverseHex: reverseHex
 }
