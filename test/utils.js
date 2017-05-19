@@ -18,4 +18,19 @@ describe('Utils', function () {
       assert.strictEqual(buf.toString('hex').toUpperCase(), 'FEFEFFFFFF')
     })
   })
+
+  describe('should be valid varint reader', function () {
+    it('<= 253', function () {
+      var i = utils.readVarInt(Buffer.from('01', 'hex'))
+      assert.strictEqual(i, 1)
+    })
+    it('<= 65535', function () {
+      var i = utils.readVarInt(Buffer.from('FD60EA', 'hex'))
+      assert.strictEqual(i, 60000)
+    })
+    it('<= 4294967295', function () {
+      var i = utils.readVarInt(Buffer.from('FEFEFFFFFF', 'hex'))
+      assert.strictEqual(i, 4294967294)
+    })
+  })
 })

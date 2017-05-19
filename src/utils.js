@@ -37,6 +37,8 @@ var intToHex = (integer) => {
   return hex
 }
 
+var hexToInt = (hex) => parseInt('0x' + reverseHex(hex))
+
 var writeUIntBE = (length) => (integer) => {
   var b = Buffer.alloc(length, 0)
   b.writeUIntBE(Buffer.from(intToHex(integer)), 0, length)
@@ -63,7 +65,29 @@ var writeVarInt = (integer) => {
   return uintWriter(integer)
 }
 
+var readVarInt = (buf) => {
+  var isStartedFD = bufferStartsWith(Buffer.from([0xFD]))
+  var isStartedFE = bufferStartsWith(Buffer.from([0xFE]))
+  var isStartedFF = bufferStartsWith(Buffer.from([0xFF]))
+  var varint = buf
+  if (isStartedFD(buf) || isStartedFE(buf) || isStartedFF(buf)) {
+    varint = buf.slice(1, buf.length)
+  }
+  var n = hexToInt(varint.toString('hex'))
+  return n
+}
+
+var bufferStartsWith = (target) => (buf) => buf.compare(target, 0, 1, 0, 1) === 0
+
 var reverseHex = (hex) => hex.match(/.{2}/g).reverse().join('')
+
+var bufferConcat = (chunks) => {
+  var msg = Buffer.alloc(0)
+  chunks.forEach((buf) => {
+    msg = suffixBy(buf)(msg)
+  })
+  return msg
+}
 
 module.exports = {
   dsha256: dsha256,
@@ -75,5 +99,7 @@ module.exports = {
   writeUIntBE: writeUIntBE,
   writeUIntLE: writeUIntLE,
   writeVarInt: writeVarInt,
-  reverseHex: reverseHex
+  readVarInt: readVarInt,
+  reverseHex: reverseHex,
+  bufferConcat: bufferConcat
 }
