@@ -100,6 +100,7 @@ module.exports = {
   writeUIntLE: writeUIntLE,
   writeVarInt: writeVarInt,
   readVarInt: readVarInt,
+  bufferStartsWith, bufferStartsWith,
   reverseHex: reverseHex,
   bufferConcat: bufferConcat
 }
