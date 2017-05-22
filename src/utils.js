@@ -37,7 +37,7 @@ var intToHex = (integer) => {
   return hex
 }
 
-var hexToInt = (hex) => parseInt('0x' + reverseHex(hex))
+var hexToInt = (hex) => parseInt('0x' + hex)
 
 var writeUIntBE = (length) => (integer) => {
   var b = Buffer.alloc(length, 0)
@@ -73,7 +73,7 @@ var readVarInt = (buf) => {
   if (isStartedFD(buf) || isStartedFE(buf) || isStartedFF(buf)) {
     varint = buf.slice(1, buf.length)
   }
-  var n = hexToInt(varint.toString('hex'))
+  var n = hexToInt(reverseHex(varint.toString('hex')))
   return n
 }
 
