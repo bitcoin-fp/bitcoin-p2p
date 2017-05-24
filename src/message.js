@@ -110,19 +110,19 @@ var blockHeader = (hex) => {
  * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#headers
  */
 var headers = (raw) => {
-  var isStartedFD = bufferStartsWith(Buffer.from([0xFD]))
-  var isStartedFE = bufferStartsWith(Buffer.from([0xFE]))
-  var isStartedFF = bufferStartsWith(Buffer.from([0xFF]))
+  var isStartedFD = utils.bufferStartsWith(Buffer.from([0xFD]))
+  var isStartedFE = utils.bufferStartsWith(Buffer.from([0xFE]))
+  var isStartedFF = utils.bufferStartsWith(Buffer.from([0xFF]))
 
   var bInt
   var bHeaders
   if (isStartedFF(raw)) {
     bInt = raw.slice(0, 8)
     bHeaders = raw.slice(8)
-  } else if(isStartedFE(raw)) {
+  } else if (isStartedFE(raw)) {
     bInt = raw.slice(0, 4)
     bHeaders = raw.slice(4)
-  } else if(isStartedFD(raw)) {
+  } else if (isStartedFD(raw)) {
     bInt = raw.slice(0, 2)
     bHeaders = raw.slice(2)
   } else {
@@ -131,6 +131,11 @@ var headers = (raw) => {
   }
   var count = utils.readVarInt(bInt)
   var headers = bHeaders.toString('hex').match(/.{81}/g).map(blockHeader)
+
+  return {
+    count: count,
+    headers: headers
+  }
 }
 
 /* Block Data
