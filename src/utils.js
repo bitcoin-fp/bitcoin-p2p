@@ -51,6 +51,10 @@ var writeUIntLE = (length) => (integer) => {
   return b
 }
 
+var readUIntLE = (length) => (buf) => {
+  return buf.readUIntLE(0, length)
+}
+
 var writeVarInt = (integer) => {
   var uintWriter
   if (integer <= 253) {
@@ -89,6 +93,10 @@ var bufferConcat = (chunks) => {
   return msg
 }
 
+var trimNullPadded = (string) => string.replace(/\0/g, '')
+
+var bufferToString = (buf) => buf.toString()
+
 module.exports = {
   dsha256: dsha256,
   prefixBy: prefixBy,
@@ -98,9 +106,12 @@ module.exports = {
   slice: slice,
   writeUIntBE: writeUIntBE,
   writeUIntLE: writeUIntLE,
+  readUIntLE: readUIntLE,
   writeVarInt: writeVarInt,
   readVarInt: readVarInt,
   bufferStartsWith: bufferStartsWith,
   reverseHex: reverseHex,
-  bufferConcat: bufferConcat
+  bufferConcat: bufferConcat,
+  trimNullPadded: trimNullPadded,
+  bufferToString: bufferToString
 }
