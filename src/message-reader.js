@@ -37,7 +37,10 @@ var readAddrMe = R.compose(readAddress, utils.slice(46, 72))
 //   var subverLength = readSubverLength(data)
 //   return R.compose(utils.bufferToString, utils.slice(81, 81 + subverLength))(data)
 // }
-var readBlockHeight = R.compose(utils.readUIntLE(4), utils.slice(-4))
+var readBlockHeight = (data) => {
+  var reader = readProtocol(data) >= 70001 ? R.compose(utils.readUIntLE(4), utils.slice(-5, -1)) : R.compose(utils.readUIntLE(4), utils.slice(-4))
+  return reader(data)
+}
 
 var readPayload = (command) => (data) => {
   var readers = {
