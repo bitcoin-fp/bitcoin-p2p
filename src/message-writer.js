@@ -160,17 +160,11 @@ var addMessageHeader = (network, command, payload) => {
 }
 
 module.exports = {
-  writer: {
-    version: version,
-    verack: verack,
-    address: address,
-    getHeaders: getHeaders,
-    getData: getData,
-    inventory: inventory,
-    blockHeader: blockHeader
-  },
-  reader: {
-    headers: headers,
-    block: block
-  }
+  version: version,
+  verack: verack,
+  address: address,
+  getHeaders: getHeaders,
+  getData: getData,
+  inventory: inventory,
+  blockHeader: blockHeader
 }

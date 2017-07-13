@@ -1,7 +1,7 @@
 /* global describe, it */
 
 var assert = require('assert')
-var msgWriter = require('../src/message').writer
+var msgWriter = require('../src/message-writer')
 
 describe('Message Writer', function () {
   it('should be vaild IP address message', function () {
@@ -39,12 +39,6 @@ describe('Message Writer', function () {
   })
 
   it('should be valid blockheader message', function () {
-    // needs data sample
-  })
-})
-
-describe('Message Reader', function () {
-  it('should be valid headers message', function () {
     // needs data sample
   })
 })
