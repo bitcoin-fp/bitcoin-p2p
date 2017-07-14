@@ -97,7 +97,6 @@ var readPayload = (command) => (data) => {
         bHeaders = data.slice(1)
       }
       var count = utils.readVarInt(bInt)
-      console.log(count)
       var headers = bHeaders.toString('hex').match(/.{162}/g).map(readBlockHeader)
 
       return {
