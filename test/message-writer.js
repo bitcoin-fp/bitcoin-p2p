@@ -37,8 +37,4 @@ describe('Message Writer', function () {
   it('should be valid getdata message', function () {
     // needs data sample
   })
-
-  it('should be valid blockheader message', function () {
-    // needs data sample
-  })
 })

@@ -4,12 +4,13 @@ var R = require('ramda')
 // var readMagic = R.compose(utils.bufferToString, utils.slice(0, 4))
 var readCmd = R.compose(utils.trimNullPadded, utils.bufferToString, utils.slice(4, 16))
 var readPayloadLength = R.compose(utils.readVarInt, utils.slice(16, 20))
-// var readPayloadChecksum = R.compose(utils.slice(20, 24))
+var readPayloadChecksum = R.compose(utils.bufferToHexString, utils.slice(20, 24))
 
 var readHeader = (data) => {
   return {
     command: readCmd(data),
-    payloadLength: readPayloadLength(data)
+    payloadLength: readPayloadLength(data),
+    payloadChecksum: readPayloadChecksum(data)
   }
 }
 
@@ -42,9 +43,31 @@ var readBlockHeight = (data) => {
   return reader(data)
 }
 
+var readBlockVersion = R.compose(utils.readUIntLE(4), utils.slice(0, 4))
+var readPrevBlock = R.compose(utils.reverseHex, utils.bufferToHexString, utils.slice(4, 36))
+var readMerkleRoot = R.compose(utils.reverseHex, utils.bufferToHexString, utils.slice(36, 68))
+var readTimestamp4 = R.compose(utils.readUIntLE(4), utils.slice(68, 72))
+var readDifficulty = R.compose(utils.readUIntLE(4), utils.slice(72, 76))
+var readBits = R.compose(utils.readUIntLE(4), utils.slice(76, 80))
+var readTxnCount = R.compose(utils.readUIntLE(1), utils.slice(80, 81))
+
+var readBlockHeader = (hex) => {
+  var header = Buffer.from(hex, 'hex')
+  return {
+    version: readBlockVersion(header),
+    prev_block: readPrevBlock(header),
+    merkle_root: readMerkleRoot(header),
+    timestamp: readTimestamp4(header),
+    difficulty: readDifficulty(header),
+    bits: readBits(header),
+    txn_count: readTxnCount(header)
+  }
+}
+
 var readPayload = (command) => (data) => {
   var readers = {
     'version': (data) => {
+      if (data.length === 0) return
       return {
         protocol: readProtocol(data),
         timestamp: readTimestamp(data),
@@ -52,9 +75,44 @@ var readPayload = (command) => (data) => {
         addrMe: readAddrMe(data).address,
         blockHeight: readBlockHeight(data)
       }
+    },
+    'verack': (data) => {},
+    'headers': (data) => {
+      var isStartedFD = utils.bufferStartsWith(Buffer.from([0xFD]))
+      var isStartedFE = utils.bufferStartsWith(Buffer.from([0xFE]))
+      var isStartedFF = utils.bufferStartsWith(Buffer.from([0xFF]))
+      var bInt
+      var bHeaders
+      if (isStartedFF(data)) {
+        bInt = data.slice(0, 9)
+        bHeaders = data.slice(9)
+      } else if (isStartedFE(data)) {
+        bInt = data.slice(0, 5)
+        bHeaders = data.slice(5)
+      } else if (isStartedFD(data)) {
+        bInt = data.slice(0, 3)
+        bHeaders = data.slice(3)
+      } else {
+        bInt = data.slice(0, 1)
+        bHeaders = data.slice(1)
+      }
+      var count = utils.readVarInt(bInt)
+      console.log(count)
+      var headers = bHeaders.toString('hex').match(/.{162}/g).map(readBlockHeader)
+
+      return {
+        count: count,
+        headers: headers
+      }
+    },
+    'ping': (data) => {
+      return {nonce: utils.readUIntLE(8)(data)}
+    },
+    'addr': (data) => {
+      return {}
     }
   }
-  return readers[command](data)
+  return readers[command] ? readers[command](data) : null
 }
 
 var read = (data) => {

@@ -32,8 +32,9 @@ var version = (opts) => {
   var subverLength = utils.writeUIntLE(1)('/Satoshi:0.7.2/'.length)
   var subver = Buffer.from('/Satoshi:0.7.2/')
   var blockHeight = utils.writeUIntLE(4)(opts.blockHeight)
+  var relay = opts.protocol >= 70001 ? Buffer.from([0x01]) : Buffer.from([])
 
-  var payload = utils.bufferConcat([protocol, service, timestamp, addrYou, addrMe, nodeId, subverLength, subver, blockHeight])
+  var payload = utils.bufferConcat([protocol, service, timestamp, addrYou, addrMe, nodeId, subverLength, subver, blockHeight, relay])
   var header = addMessageHeader(opts.network, 'version', payload)
   var message = utils.prefixBy(header)(payload)
 
@@ -65,6 +66,18 @@ var getHeaders = (opts) => {
   return message
 }
 
+/* Pong
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#pong
+ */
+var pong = (opts) => {
+  var nonce = utils.writeUIntLE(8)(opts.nonce)
+  var payload = utils.bufferConcat([nonce])
+  var header = addMessageHeader(opts.network, 'pong', payload)
+  var message = utils.prefixBy(header)(payload)
+
+  return message
+}
+
 /* Inventory
  * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#Inventory_Vectors
  */
@@ -90,60 +103,12 @@ var getData = (opts) => {
   return message
 }
 
-/* Block Headers Data
- * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#Block_Headers
- */
-var blockHeader = (hex) => {
-  var header = Buffer.from(hex, 'hex')
-  return {
-    version: utils.slice(0, 4)(header),
-    prev_block: utils.slice(4, 36)(header),
-    merkle_root: utils.slice(36, 68)(header),
-    timestamp: utils.slice(68, 72)(header),
-    difficulty: utils.slice(72, 76)(header),
-    nonce: utils.slice(76, 80)(header),
-    txn_count: utils.slice(80, 81)(header)
-  }
-}
-
-/* Headers Data
- * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#headers
- */
-var headers = (raw) => {
-  var isStartedFD = utils.bufferStartsWith(Buffer.from([0xFD]))
-  var isStartedFE = utils.bufferStartsWith(Buffer.from([0xFE]))
-  var isStartedFF = utils.bufferStartsWith(Buffer.from([0xFF]))
-
-  var bInt
-  var bHeaders
-  if (isStartedFF(raw)) {
-    bInt = raw.slice(0, 8)
-    bHeaders = raw.slice(8)
-  } else if (isStartedFE(raw)) {
-    bInt = raw.slice(0, 4)
-    bHeaders = raw.slice(4)
-  } else if (isStartedFD(raw)) {
-    bInt = raw.slice(0, 2)
-    bHeaders = raw.slice(2)
-  } else {
-    bInt = raw.slice(0, 1)
-    bHeaders = raw.slice(1)
-  }
-  var count = utils.readVarInt(bInt)
-  var headers = bHeaders.toString('hex').match(/.{81}/g).map(blockHeader)
-
-  return {
-    count: count,
-    headers: headers
-  }
-}
-
 /* Block Data
  * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#block
  */
-var block = (raw) => {
+// var block = (raw) => {
 
-}
+// }
 
 /* Message Header
  * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#Message_structure
@@ -166,5 +131,5 @@ module.exports = {
   getHeaders: getHeaders,
   getData: getData,
   inventory: inventory,
-  blockHeader: blockHeader
+  pong: pong
 }
