@@ -97,6 +97,8 @@ var trimNullPadded = (string) => string.replace(/\0/g, '')
 
 var bufferToString = (buf) => buf.toString()
 
+var bufferToHexString = (buf) => buf.toString('hex')
+
 module.exports = {
   dsha256: dsha256,
   prefixBy: prefixBy,
@@ -113,5 +115,6 @@ module.exports = {
   reverseHex: reverseHex,
   bufferConcat: bufferConcat,
   trimNullPadded: trimNullPadded,
-  bufferToString: bufferToString
+  bufferToString: bufferToString,
+  bufferToHexString: bufferToHexString
 }
