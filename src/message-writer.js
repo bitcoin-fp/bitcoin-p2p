@@ -124,12 +124,19 @@ var addMessageHeader = (network, command, payload) => {
   return header
 }
 
+var write = (cmd, opts) => {
+  var cmds = {
+    version: version,
+    verack: verack,
+    address: address,
+    getheaders: getHeaders,
+    getdata: getData,
+    inventory: inventory,
+    pong: pong
+  }
+  return cmds[cmd](opts)
+}
+
 module.exports = {
-  version: version,
-  verack: verack,
-  address: address,
-  getHeaders: getHeaders,
-  getData: getData,
-  inventory: inventory,
-  pong: pong
+  write: write
 }
