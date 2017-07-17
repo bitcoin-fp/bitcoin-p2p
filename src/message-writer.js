@@ -81,9 +81,9 @@ var pong = (opts) => {
 /* Inventory
  * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#Inventory_Vectors
  */
-var inventory = (hash) => {
+var inventory = (opts) => {
   var type = utils.writeUIntLE(4)(2)
-  var bHash = Buffer.from(utils.reverseHex(hash), 'hex')
+  var bHash = Buffer.from(utils.reverseHex(opts.hash), 'hex')
 
   var inv = utils.bufferConcat([type, bHash])
 
