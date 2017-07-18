@@ -99,6 +99,8 @@ var bufferToString = (buf) => buf.toString()
 
 var bufferToHexString = (buf) => buf.toString('hex')
 
+var blockHash = (blockHeader) => dsha256(Buffer.from(blockHeader.version + blockHeader.prev_block + blockHeader.merkle_root + blockHeader.timestamp + blockHeader.bits + blockHeader.nonce, 'hex'))
+
 module.exports = {
   dsha256: dsha256,
   prefixBy: prefixBy,
@@ -116,5 +118,6 @@ module.exports = {
   bufferConcat: bufferConcat,
   trimNullPadded: trimNullPadded,
   bufferToString: bufferToString,
-  bufferToHexString: bufferToHexString
+  bufferToHexString: bufferToHexString,
+  blockHash: blockHash
 }
