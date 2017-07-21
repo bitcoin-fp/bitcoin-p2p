@@ -43,13 +43,13 @@ var readBlockHeight = (data) => {
   return reader(data)
 }
 
-var readBlockVersion = R.compose(utils.readUIntLE(4), utils.slice(0, 4))
-var readPrevBlock = R.compose(utils.reverseHex, utils.bufferToHexString, utils.slice(4, 36))
-var readMerkleRoot = R.compose(utils.reverseHex, utils.bufferToHexString, utils.slice(36, 68))
-var readTimestamp4 = R.compose(utils.readUIntLE(4), utils.slice(68, 72))
-var readDifficulty = R.compose(utils.readUIntLE(4), utils.slice(72, 76))
-var readBits = R.compose(utils.readUIntLE(4), utils.slice(76, 80))
-var readTxnCount = R.compose(utils.readUIntLE(1), utils.slice(80, 81))
+var readBlockVersion = R.compose(utils.bufferToHexString, utils.slice(0, 4))
+var readPrevBlock = R.compose(utils.bufferToHexString, utils.slice(4, 36))
+var readMerkleRoot = R.compose(utils.bufferToHexString, utils.slice(36, 68))
+var readTimestamp4 = R.compose(utils.bufferToHexString, utils.slice(68, 72))
+var readBits = R.compose(utils.bufferToHexString, utils.slice(72, 76))
+var readNonce = R.compose(utils.bufferToHexString, utils.slice(76, 80))
+var readTxnCount = R.compose(utils.bufferToHexString, utils.slice(80, 81))
 
 var readBlockHeader = (hex) => {
   var header = Buffer.from(hex, 'hex')
@@ -58,8 +58,8 @@ var readBlockHeader = (hex) => {
     prev_block: readPrevBlock(header),
     merkle_root: readMerkleRoot(header),
     timestamp: readTimestamp4(header),
-    difficulty: readDifficulty(header),
     bits: readBits(header),
+    nonce: readNonce(header),
     txn_count: readTxnCount(header)
   }
 }

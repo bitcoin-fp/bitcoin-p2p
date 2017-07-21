@@ -29,10 +29,10 @@ var version = (opts) => {
   var addrYou = address(opts.addrYou, PORT[opts.network.toUpperCase()])
   var addrMe = address(opts.addrMe, PORT[opts.network.toUpperCase()])
   var nodeId = opts.nodeId ? opts.nodeId : crypto.randomBytes(8)
-  var subverLength = utils.writeUIntLE(1)('/Satoshi:0.7.2/'.length)
-  var subver = Buffer.from('/Satoshi:0.7.2/')
+  var subverLength = utils.writeUIntLE(1)('/Satoshi:0.14.2/'.length)
+  var subver = Buffer.from('/Satoshi:0.14.2/')
   var blockHeight = utils.writeUIntLE(4)(opts.blockHeight)
-  var relay = opts.protocol >= 70001 ? Buffer.from([0x01]) : Buffer.from([])
+  var relay = opts.protocol >= 70001 ? Buffer.from([0x00]) : Buffer.from([])
 
   var payload = utils.bufferConcat([protocol, service, timestamp, addrYou, addrMe, nodeId, subverLength, subver, blockHeight, relay])
   var header = addMessageHeader(opts.network, 'version', payload)
@@ -54,15 +54,29 @@ var verack = (opts) => {
  */
 var getHeaders = (opts) => {
   var protocol = utils.writeUIntLE(4)(opts.protocol)
-  var hashCount = utils.writeUIntLE(1)(1)
-  var highestBlock = Blockchain.getHighestBlock()
-  var highestBlockHash = Buffer.from(utils.reverseHex(highestBlock.hash), 'hex')
+
+  var blockchain = Blockchain.getBlockchain()
+  var locatorObjects = blockchain.reduce((acc, block, index) => {
+    if (index === Blockchain.getLength() - 1) {
+      acc.push(Buffer.from(utils.reverseHex(Blockchain.getGenesisBlock().hash), 'hex'))
+      return acc
+    }
+
+    if (index < 10 || index % 10 === 0) {
+      acc.push(Buffer.from(utils.reverseHex(block.hash), 'hex'))
+      return acc
+    } else {
+      return acc
+    }
+  }, [])
+
+  var hashCount = utils.writeVarInt(locatorObjects.length)
+  var locatorHashes = utils.bufferConcat(locatorObjects)
   var hashStop = Buffer.alloc(32)
 
-  var payload = utils.bufferConcat([protocol, hashCount, highestBlockHash, hashStop])
+  var payload = utils.bufferConcat([protocol, hashCount, locatorHashes, hashStop])
   var header = addMessageHeader(opts.network, 'getheaders', payload)
   var message = utils.prefixBy(header)(payload)
-
   return message
 }
 
@@ -82,8 +96,8 @@ var pong = (opts) => {
  * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#Inventory_Vectors
  */
 var inventory = (opts) => {
-  var type = utils.writeUIntLE(4)(2)
-  var bHash = Buffer.from(utils.reverseHex(opts.hash), 'hex')
+  var type = utils.writeUIntLE(4)(4)
+  var bHash = Buffer.from(opts.hash, 'hex')
 
   var inv = utils.bufferConcat([type, bHash])
 

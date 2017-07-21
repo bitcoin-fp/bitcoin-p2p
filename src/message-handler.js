@@ -1,23 +1,32 @@
 var msgReader = require('./message-reader')
 var msgWriter = require('./message-writer')
+var utils = require('./utils')
+var blockchain = require('./blockchain')
 
 var handlers = (socket) => (cmd) => {
   var strategies = {
     'version': (payload) => {
       console.log(JSON.stringify(payload) + '\n')
-      var getheaders = msgWriter.write('getheaders', {protocol: 70015, network: 'mainnet'})
-      socket.write(getheaders)
-      console.log('[getheaders] sent to ' + socket.remoteAddress + '\n')
-    },
-    'verack': (payload) => {
       var verack = msgWriter.write('verack', {network: 'mainnet'})
       socket.write(verack)
       console.log('[verack] sent to ' + socket.remoteAddress + '\n')
     },
+    'verack': (payload) => {
+      var getheaders = msgWriter.write('getheaders', {protocol: 70015, network: 'mainnet'})
+      socket.write(getheaders)
+      console.log('[getheaders] sent to ' + socket.remoteAddress + '\n')
+    },
     'headers': (payload) => {
-      //TO STORE DATA
-      console.log(payload.headers.length)
-      console.log(JSON.stringify(payload.headers[0]) + '\n')
+      payload.headers.forEach((header) => {
+        header.hash = utils.blockHash(header).toString('hex')
+        blockchain.addBlock(header)
+      })
+      console.log(blockchain.getBlockchain())
+      setTimeout(() => {
+        var getheaders = msgWriter.write('getheaders', {protocol: 70015, network: 'mainnet'})
+        socket.write(getheaders)
+        console.log('[getheaders] sent to ' + socket.remoteAddress + '\n')
+      }, 5000)
     },
     'ping': (payload) => {
       var pong = msgWriter.write('pong', {network: 'mainnet', nonce: payload.nonce})
@@ -42,7 +51,7 @@ var handle = (socket) => (data) => {
 var register = (sockets) => {
   sockets.forEach((socket) => {
     socket.on('data', handle(socket))
-    var version = msgWriter.write('version', {protocol: 70015, addrMe: socket.localAddress, addrYou: socket.remoteAddress, network: 'mainnet', blockHeight: 0})
+    var version = msgWriter.write('version', {protocol: 70015, addrMe: socket.localAddress, addrYou: socket.remoteAddress, network: 'mainnet', blockHeight: 1})
     socket.write(version)
     console.log('[version] sent to ' + socket.remoteAddress + '\n')
   })
