@@ -1,40 +1,50 @@
-var net = require('net')
-var NETWORK = require('./const').NETWORK
-var PORT = require('./const').PORT
+var Socket = require('./socket')
 var msgHandler = require('./message-handler')
 
-var peerConnection = (network) => (ip) => {
-  return new Promise((resolve, reject) => {
-    var socket = new net.Socket()
-    socket.connect({
-      port: network === NETWORK.MAINNET ? PORT.MAINNET : PORT.TESTNET,
-      host: ip
-    }, () => {
-      console.log('peer ' + ip + ' connected')
-      resolve(socket)
-    })
+var readyPool = []
+var handshakedPool = []
 
-    socket.on('error', (err) => {
-      console.log('peer ' + ip + ' connect fail')
-      reject(err)
-    })
+var peerSocket = (network) => (ip) => {
+  return new Promise((resolve, reject) => {
+    resolve(new Socket(ip, network))
   })
 }
 
-var allPeersConnected = (peerSockets) => {
-  console.log('All ' + peerSockets.length + ' peers connected!')
-  // msgHandler.register([peerSockets[0]]) //test code
-  msgHandler.register(peerSockets)
+var pushToPool = (peerSockets) => {
+  return new Promise((resolve, reject) => {
+    readyPool = readyPool.concat(peerSockets)
+    resolve()
+  })
 }
 
-var connect = (network) => (ips) => {
-  // ips = ['195.154.69.36'] //test code
-  // ips = ['46.166.160.96'] //test code
-  var allPeersConnection = ips.map(peerConnection(network))
-  Promise.all(allPeersConnection).then(allPeersConnected).catch(console.log)
-  return allPeersConnection
+var popFromPool = () => readyPool.shift()
+
+var connect = () => {
+  console.log('start sync')
+  var peerSocket = popFromPool()
+  peerSocket.connect()
+
+  // check handshake status
+  var iter = 0
+  var intervalId = setInterval(function () {
+    if (peerSocket.isHandshaked()) {
+      clearInterval(intervalId)
+      handshakedPool.push(peerSocket)
+    } else if (iter == 3) {
+      peerSocket.disconnect()
+      connect()
+    }
+    iter++
+  }, 3000)
+}
+
+var buildPool = (network) => (ips) => {
+  ips = ['46.166.160.96', '60.251.143.133', '195.154.69.36', '45.32.75.82'] //test code
+  var peerSockets = ips.map(peerSocket(network))
+  Promise.all(peerSockets).then(pushToPool).then(connect).catch(console.log)
+  return peerSockets
 }
 
 module.exports = {
-  connect: connect
+  buildPool: buildPool
 }
