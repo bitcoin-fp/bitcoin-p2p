@@ -16,15 +16,16 @@ var handlers = (socket) => (cmd) => {
     },
     'verack': (payload) => {
       socket.setVerackBack(true)
-    },
-    'ping': (payload) => {
-      var pong = msgWriter.write('pong', {network: 'mainnet', nonce: payload.nonce})
-      socket.write(pong)
-      console.log('[pong] sent to ' + socket.connection.remoteAddress + '\n')
-    },
-    'addr': (payload) => {
-
     }
+    // ,
+    // 'ping': (payload) => {
+    //   var pong = msgWriter.write('pong', {network: 'mainnet', nonce: payload.nonce})
+    //   socket.write(pong)
+    //   console.log('[pong] sent to ' + socket.connection.remoteAddress + '\n')
+    // },
+    // 'addr': (payload) => {
+
+    // }
   }
   return strategies[cmd]
 }
