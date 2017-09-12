@@ -10,11 +10,11 @@ var handlers = (socket) => (cmd) => {
         header.hash = utils.blockHash(header).toString('hex')
         blockchain.addBlock(header)
       })
-      console.log(blockchain.getBlockchain())
+      console.log(blockchain.getBlockchain().length)
       setTimeout(() => {
         var getheaders = msgWriter.write('getheaders', {protocol: 70015, network: 'mainnet'})
         socket.write(getheaders)
-        console.log('[getheaders] sent to ' + socket.remoteAddress + '\n')
+        console.log('[getheaders] sent to ' + socket.connection.remoteAddress + '\n')
       }, 5000)
     }
   }
@@ -25,15 +25,17 @@ var handle = (socket) => (data) => {
   var message = msgReader.read(data)
   var cmd = message.header.command
   var payload = message.payload
-  console.log('[' + message.header.command + '] received from ' + socket.connection.remoteAddress + '\n')
-  if (handlers(socket)(cmd)) handlers(socket)(cmd)(payload)
+  if (handlers(socket)(cmd)) {
+    console.log('[' + message.header.command + '] received from ' + socket.connection.remoteAddress + '\n')
+    handlers(socket)(cmd)(payload)
+  }
 }
 
 var register = (socket) => {
   socket.connection.on('data', handle(socket))
   var getheaders = msgWriter.write('getheaders', {protocol: 70015, network: 'mainnet'})
   socket.write(getheaders)
-  console.log('[getheaders] sent to ' + socket.remoteAddress + '\n')
+  console.log('[getheaders] sent to ' + socket.connection.remoteAddress + '\n')
 }
 
 module.exports = {

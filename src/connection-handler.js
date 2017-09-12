@@ -16,16 +16,12 @@ var handlers = (socket) => (cmd) => {
     },
     'verack': (payload) => {
       socket.setVerackBack(true)
+    },
+    'ping': (payload) => {
+      var pong = msgWriter.write('pong', {network: 'mainnet', nonce: payload.nonce})
+      socket.write(pong)
+      console.log('[pong] sent to ' + socket.connection.remoteAddress + '\n')
     }
-    // ,
-    // 'ping': (payload) => {
-    //   var pong = msgWriter.write('pong', {network: 'mainnet', nonce: payload.nonce})
-    //   socket.write(pong)
-    //   console.log('[pong] sent to ' + socket.connection.remoteAddress + '\n')
-    // },
-    // 'addr': (payload) => {
-
-    // }
   }
   return strategies[cmd]
 }
@@ -34,8 +30,10 @@ var handle = (socket) => (data) => {
   var message = msgReader.read(data)
   var cmd = message.header.command
   var payload = message.payload
-  console.log('[' + message.header.command + '] received from ' + socket.connection.remoteAddress + '\n')
-  if (handlers(socket)(cmd)) handlers(socket)(cmd)(payload)
+  if (handlers(socket)(cmd)) {
+    console.log('[' + message.header.command + '] received from ' + socket.connection.remoteAddress + '\n')
+    handlers(socket)(cmd)(payload)
+  }
 }
 
 var register = (socket) => {

@@ -1,5 +1,4 @@
 var Socket = require('./socket')
-var headerSynchorizer = require('./header-synchorizer')
 
 var readyPool = []
 var handshakedPool = []
@@ -48,19 +47,16 @@ var popFromHandshakedPool = () => handshakedPool.shift()
 
 var isSyncingHeaders = false
 var syncHeaders = () => {
-  console.log('start syncing headers')
   if (isSyncingHeaders) {
     return
   } else {
     try {
-      console.log('a')
       isSyncingHeaders = true
       var peerSocket = popFromHandshakedPool()
-      if (peerSocket) headerSynchorizer.register(peerSocket)
+      if (peerSocket) peerSocket.syncHeaders()
       else throw "no peer socket"
     }
     catch (e) {
-      console.log('b')
       isSyncingHeaders = false
     }
   }
@@ -74,14 +70,13 @@ var connect = () => {
   console.log('start sync')
 
   buildHandShakedPool()
-  // syncHeaders()
   setInterval(syncHeaders, 3000)
   // syncBlocks()
 }
 
 var buildPool = (network) => (ips) => {
   // ips = ['46.166.160.96', '60.251.143.133', '195.154.69.36', '45.32.75.82'] //test code
-  ips = ['60.251.143.133'] //test code
+  ips = ['36.227.35.104'] //test code
   var peerSockets = ips.map(peerSocket(network))
   Promise.all(peerSockets).then(pushToReadyPool).then(connect).catch(console.log)
   return peerSockets

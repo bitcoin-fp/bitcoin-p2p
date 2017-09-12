@@ -3,7 +3,7 @@ var NETWORK = require('./const').NETWORK
 var PORT = require('./const').PORT
 var messageHandler = require('./message-handler')
 var connectionHandler = require('./connection-handler')
-// var headerSynchorizer = require('./header-synchorizer')
+var headerSynchorizer = require('./header-synchorizer')
 // var blockSynchorizer = require('./block-synchorizer')
 // var addressSynchorizer = require('./address-synchorizer')
 
@@ -27,7 +27,6 @@ Socket.prototype.connect = function () {
   }, () => {
     console.log('peer tcp ' + _this.ip + ' connected')
     connectionHandler.register(_this)
-    // messageHandler.register(_this)
   })
 
   this.connection.on('error', (err) => {
@@ -45,9 +44,9 @@ Socket.prototype.disconnect = function () {
 //   blockSynchorizer.register(this)
 // }
 
-// Socket.prototype.syncBlockHeader = function () {
-//   headerSynchorizer.register(this)
-// }
+Socket.prototype.syncHeaders = function () {
+  headerSynchorizer.register(this)
+}
 
 // Socket.prototype.getMorePeerAddresses = function () {
 //   addressSynchorizer.register(this)
