@@ -1,13 +1,12 @@
 var net = require('net')
 var NETWORK = require('./const').NETWORK
 var PORT = require('./const').PORT
-var messageHandler = require('./message-handler')
 var connectionHandler = require('./connection-handler')
 var headerSynchorizer = require('./header-synchorizer')
 // var blockSynchorizer = require('./block-synchorizer')
 // var addressSynchorizer = require('./address-synchorizer')
 
-function Socket(ip, network) {
+function Socket (ip, network) {
   this.ip = ip
   this.network = network
 
@@ -16,11 +15,11 @@ function Socket(ip, network) {
   this.isVerackSent = false
   this.isVerackBack = false
 
-  this.connection = new net.Socket()  
+  this.connection = new net.Socket()
 }
 
 Socket.prototype.connect = function () {
-  var _this = this;
+  var _this = this
   this.connection.connect({
     port: this.network === NETWORK.MAINNET ? PORT.MAINNET : PORT.TESTNET,
     host: this.ip
@@ -29,11 +28,9 @@ Socket.prototype.connect = function () {
     connectionHandler.register(_this)
   })
 
-  this.connection.on('error', (err) => {
+  this.connection.on('error', () => {
     console.log('peer tcp ' + _this.ip + ' connect fail')
-    reject(err)
   })
-
 }
 
 Socket.prototype.disconnect = function () {

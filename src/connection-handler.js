@@ -1,14 +1,12 @@
 var msgReader = require('./message-reader')
 var msgWriter = require('./message-writer')
-var utils = require('./utils')
-var blockchain = require('./blockchain')
 
 var handlers = (socket) => (cmd) => {
   var strategies = {
     'version': (payload) => {
       console.log(JSON.stringify(payload) + '\n')
       socket.setVersionBack(true)
-      
+
       var verack = msgWriter.write('verack', {network: 'mainnet'})
       socket.write(verack)
       socket.setVerackSent(true)

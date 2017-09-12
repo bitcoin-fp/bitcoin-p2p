@@ -1,4 +1,5 @@
 var Socket = require('./socket')
+var Exception = require('./exception')
 
 var readyPool = []
 var handshakedPool = []
@@ -31,7 +32,7 @@ var buildHandShakedPool = () => {
       pushToHandshakedPool(peerSocket)
       console.log('Handshake done. Total: ' + handshakedPool.length)
       buildHandShakedPool()
-    } else if (iter == 3) {
+    } else if (iter === 3) {
       clearInterval(intervalId)
       peerSocket.disconnect()
       console.log('Handshake fail.')
@@ -47,24 +48,21 @@ var popFromHandshakedPool = () => handshakedPool.shift()
 
 var isSyncingHeaders = false
 var syncHeaders = () => {
-  if (isSyncingHeaders) {
-    return
-  } else {
+  if (!isSyncingHeaders) {
     try {
       isSyncingHeaders = true
       var peerSocket = popFromHandshakedPool()
       if (peerSocket) peerSocket.syncHeaders()
-      else throw "no peer socket"
-    }
-    catch (e) {
+      else throw new Exception('no peer socket')
+    } catch (e) {
       isSyncingHeaders = false
     }
   }
 }
 
-var syncBlocks = () => {
+// var syncBlocks = () => {
 
-}
+// }
 
 var connect = () => {
   console.log('start sync')
@@ -76,7 +74,6 @@ var connect = () => {
 
 var buildPool = (network) => (ips) => {
   // ips = ['46.166.160.96', '60.251.143.133', '195.154.69.36', '45.32.75.82'] //test code
-  ips = ['36.227.35.104'] //test code
   var peerSockets = ips.map(peerSocket(network))
   Promise.all(peerSockets).then(pushToReadyPool).then(connect).catch(console.log)
   return peerSockets
