@@ -1,21 +1,85 @@
+var level = require('level')
+var thenlevel = require('then-levelup')
+
+var headersDB = null
+
+var topHeight = 0
+
 var BLOCK0 = require('./const').GENESIS_BLOCK
 
-var blockchain = [BLOCK0]
+var addBlockHeaders = (headers) => {
+  return headers.reduce((promise, header) => { // sequential promise execution
+    return promise.then(() => {
+      var ops = [
+        {type: 'put', key: 'top_height', value: topHeight + 1},
+        {type: 'put', key: topHeight + 1, value: header}
+      ]
+      return headersDB.batch(ops)
+      .then(() => ++topHeight)
+      .catch((err) => console.log('Add block header fail.'))
+    })
+  }, Promise.resolve())
+}
 
-var addBlock = (block) => blockchain.unshift(block)
+var getBlockHeader = (index) => headersDB.get(index)
 
-var getHighestBlock = () => blockchain[0]
+var getBlockHash = (index) => getBlockHeader(index).then((header) => header.hash)
 
-var getBlockchain = () => blockchain
+var getLength = () => topHeight + 1
 
-var getLength = () => blockchain.length
+var getGenesisBlockHeader = () => getBlockHeader(0)
 
-var getGenesisBlock = () => blockchain[blockchain.length - 1]
+var getGenesisBlockHeaderHash = () => getBlockHash(0)
+
+var getHighestBlockHeader = () => getBlockHeader(topHeight)
+
+var getHighestBlockHeaderHash = () => getBlockHash(topHeight)
+
+var getLocatorObjects = () => {
+  var indexes = []
+  var step = 1
+  for (var i = topHeight; i > 0; i -= step) {
+    if (indexes.length >= 10) step *= 2
+    indexes.push(i)
+  }
+  indexes.push(0)
+
+  Promise.all(indexes.map(getBlockHash)).then((blockHashes) => {
+    return blockHashes
+  }).catch(console.log)
+}
+
+var init = (location) => {
+  headersDB = thenlevel(level(location, {valueEncoding: 'json'}))
+
+  return headersDB.get('top_height')
+  .then((value) => {
+    topHeight = value
+    return topHeight
+  })
+  .catch((err) => {
+    var ops = [
+      {type: 'put', key: 'top_height', value: topHeight},
+      {type: 'put', key: 0, value: BLOCK0}
+    ]
+    return headersDB.batch(ops)
+    .then(() => {
+      console.log('Headers DB init done.')
+      return topHeight
+    })
+    .catch((err) => console.log('Headers DB init fail'))
+  })
+}
 
 module.exports = {
-  addBlock: addBlock,
-  getHighestBlock: getHighestBlock,
-  getBlockchain: getBlockchain,
+  addBlockHeaders: addBlockHeaders,
+  getHighestBlockHeader: getHighestBlockHeader,
+  getHighestBlockHeaderHash: getHighestBlockHeaderHash,
   getLength: getLength,
-  getGenesisBlock: getGenesisBlock
+  getBlockHeader: getBlockHeader,
+  getBlockHash: getBlockHash,
+  getGenesisBlockHeader: getGenesisBlockHeader,
+  getGenesisBlockHeaderHash: getGenesisBlockHeaderHash,
+  getLocatorObjects: getLocatorObjects,
+  init: init
 }
