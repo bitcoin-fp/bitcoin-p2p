@@ -55,29 +55,18 @@ var verack = (opts) => {
 var getHeaders = (opts) => {
   var protocol = utils.writeUIntLE(4)(opts.protocol)
 
-  var blockchain = Blockchain.getBlockchain()
-  var locatorObjects = blockchain.reduce((acc, block, index) => {
-    if (index === Blockchain.getLength() - 1) {
-      acc.push(Buffer.from(utils.reverseHex(Blockchain.getGenesisBlock().hash), 'hex'))
-      return acc
-    }
+  return Blockchain.getLocatorObjects().then((hashes) => {
+    var locatorObjects = hashes.map((hash) => Buffer.from(utils.reverseHex(hash), 'hex'))
 
-    if (index < 10 || index % 10 === 0) {
-      acc.push(Buffer.from(utils.reverseHex(block.hash), 'hex'))
-      return acc
-    } else {
-      return acc
-    }
-  }, [])
+    var hashCount = utils.writeVarInt(locatorObjects.length)
+    var locatorHashes = utils.bufferConcat(locatorObjects)
+    var hashStop = Buffer.alloc(32)
 
-  var hashCount = utils.writeVarInt(locatorObjects.length)
-  var locatorHashes = utils.bufferConcat(locatorObjects)
-  var hashStop = Buffer.alloc(32)
-
-  var payload = utils.bufferConcat([protocol, hashCount, locatorHashes, hashStop])
-  var header = addMessageHeader(opts.network, 'getheaders', payload)
-  var message = utils.prefixBy(header)(payload)
-  return message
+    var payload = utils.bufferConcat([protocol, hashCount, locatorHashes, hashStop])
+    var header = addMessageHeader(opts.network, 'getheaders', payload)
+    var message = utils.prefixBy(header)(payload)
+    return message
+  })
 }
 
 /* Pong
