@@ -39,12 +39,12 @@ var getLocatorObjects = () => {
   var indexes = []
   var step = 1
   for (var i = topHeight; i > 0; i -= step) {
-    if (indexes.length >= 10) step *= 2
     indexes.push(i)
+    if (indexes.length >= 10) step *= 2
   }
   indexes.push(0)
 
-  Promise.all(indexes.map(getBlockHash)).then((blockHashes) => {
+  return Promise.all(indexes.map(getBlockHash)).then((blockHashes) => {
     return blockHashes
   }).catch(console.log)
 }
