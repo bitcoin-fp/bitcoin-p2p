@@ -5,6 +5,7 @@ var connectionHandler = require('./connection-handler')
 var headerSynchorizer = require('./header-synchorizer')
 // var blockSynchorizer = require('./block-synchorizer')
 // var addressSynchorizer = require('./address-synchorizer')
+var writeLog = require('./logger').logsc
 
 function Socket (ip, network) {
   this.ip = ip
@@ -22,14 +23,16 @@ Socket.prototype.connect = function () {
   var _this = this
   this.connection.connect({
     port: this.network === NETWORK.MAINNET ? PORT.MAINNET : PORT.TESTNET,
-    host: this.ip
+    host: this.ip,
+    localPort: 8333
   }, () => {
-    console.log('peer tcp ' + _this.ip + ' connected')
+    writeLog('Peer ' + _this.ip + ' connected.')
     connectionHandler.register(_this)
   })
 
-  this.connection.on('error', () => {
-    console.log('peer tcp ' + _this.ip + ' connect fail')
+  this.connection.on('error', (err) => {
+    writeLog('[Error] Fail in peer connection ' + _this.ip + '.')
+    writeLog(err)
   })
 }
 

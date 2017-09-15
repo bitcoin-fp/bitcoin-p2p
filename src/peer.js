@@ -1,5 +1,7 @@
 var Socket = require('./socket')
 var Exception = require('./exception')
+var writescLog = require('./logger').logsc
+var writehsLog = require('./logger').loghs
 
 var readyPool = []
 var handshakedPool = []
@@ -30,12 +32,12 @@ var buildHandShakedPool = () => {
     if (peerSocket.isHandshaked()) {
       clearInterval(intervalId)
       pushToHandshakedPool(peerSocket)
-      console.log('Handshake done. Total: ' + handshakedPool.length)
+      writescLog('Handshake done. Total: ' + handshakedPool.length + ' socket(s) on stack.')
       buildHandShakedPool()
     } else if (iter === 3) {
       clearInterval(intervalId)
       peerSocket.disconnect()
-      console.log('Handshake fail.')
+      writescLog('[Warning] Fail in handshake.')
       buildHandShakedPool()
     }
     iter++
@@ -53,9 +55,10 @@ var syncHeaders = () => {
       isSyncingHeaders = true
       var peerSocket = popFromHandshakedPool()
       if (peerSocket) peerSocket.syncHeaders()
-      else throw new Exception('no peer socket')
+      else throw new Exception('No peer socket found.')
     } catch (e) {
       isSyncingHeaders = false
+      writehsLog('[Warning] ' + e.message)
     }
   }
 }
@@ -65,7 +68,7 @@ var syncHeaders = () => {
 // }
 
 var connect = () => {
-  console.log('start sync')
+  console.log('Start syncing with other nodes.')
 
   buildHandShakedPool()
   setInterval(syncHeaders, 3000)
@@ -74,6 +77,8 @@ var connect = () => {
 
 var buildPool = (network) => (ips) => {
   // ips = ['46.166.160.96', '60.251.143.133', '195.154.69.36', '45.32.75.82'] //test code
+  // ips = ['104.237.2.189']
+  // ips = ['88.99.170.66']
   var peerSockets = ips.map(peerSocket(network))
   Promise.all(peerSockets).then(pushToReadyPool).then(connect).catch(console.log)
   return peerSockets

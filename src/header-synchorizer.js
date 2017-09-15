@@ -2,6 +2,7 @@ var msgReader = require('./message-reader')
 var msgWriter = require('./message-writer')
 var utils = require('./utils')
 var Blockchain = require('./blockchain')
+var writeLog = require('./logger').loghs
 
 var handlers = (socket) => (cmd) => {
   var strategies = {
@@ -13,10 +14,12 @@ var handlers = (socket) => (cmd) => {
         setTimeout(() => {
           msgWriter.write('getheaders', {protocol: 70015, network: 'mainnet'}).then((getheaders) => {
             socket.write(getheaders)
-            console.log('[getheaders] sent to ' + socket.connection.remoteAddress + '\n')
+            writeLog('[getheaders] sent to ' + socket.connection.remoteAddress)
           })
         }, 5000)
-      }).catch((err) => console.log(err))
+      }).catch((err) => {
+        writeLog('[Error] ' + err)
+      })
     }
   }
   return strategies[cmd]
@@ -27,17 +30,16 @@ var handle = (socket) => (data) => {
   var cmd = message.header.command
   var payload = message.payload
   if (handlers(socket)(cmd)) {
-    console.log('[' + message.header.command + '] received from ' + socket.connection.remoteAddress + '\n')
+    writeLog('[' + message.header.command + '] received from ' + socket.connection.remoteAddress)
     handlers(socket)(cmd)(payload)
   }
 }
 
 var register = (socket) => {
   socket.connection.on('data', handle(socket))
-  // var getheaders = msgWriter.write('getheaders', {protocol: 70015, network: 'mainnet'})
   msgWriter.write('getheaders', {protocol: 70015, network: 'mainnet'}).then((getheaders) => {
     socket.write(getheaders)
-    console.log('[getheaders] sent to ' + socket.connection.remoteAddress + '\n')
+    writeLog('[getheaders] sent to ' + socket.connection.remoteAddress)
   })
 }
 

@@ -1,16 +1,17 @@
 var msgReader = require('./message-reader')
 var msgWriter = require('./message-writer')
+var writeLog = require('./logger').logsc
 
 var handlers = (socket) => (cmd) => {
   var strategies = {
     'version': (payload) => {
-      console.log(JSON.stringify(payload) + '\n')
+      writeLog('The remote node has ' + payload.blockHeight + ' block(s).')
       socket.setVersionBack(true)
 
       var verack = msgWriter.write('verack', {network: 'mainnet'})
       socket.write(verack)
       socket.setVerackSent(true)
-      console.log('[verack] sent to ' + socket.connection.remoteAddress + '\n')
+      writeLog('[verack] sent to ' + socket.connection.remoteAddress)
     },
     'verack': (payload) => {
       socket.setVerackBack(true)
@@ -18,7 +19,7 @@ var handlers = (socket) => (cmd) => {
     'ping': (payload) => {
       var pong = msgWriter.write('pong', {network: 'mainnet', nonce: payload.nonce})
       socket.write(pong)
-      console.log('[pong] sent to ' + socket.connection.remoteAddress + '\n')
+      writeLog('[pong] sent to ' + socket.connection.remoteAddress)
     }
   }
   return strategies[cmd]
@@ -29,7 +30,7 @@ var handle = (socket) => (data) => {
   var cmd = message.header.command
   var payload = message.payload
   if (handlers(socket)(cmd)) {
-    console.log('[' + message.header.command + '] received from ' + socket.connection.remoteAddress + '\n')
+    writeLog('[' + message.header.command + '] received from ' + socket.connection.remoteAddress)
     handlers(socket)(cmd)(payload)
   }
 }
@@ -39,7 +40,7 @@ var register = (socket) => {
   var version = msgWriter.write('version', {protocol: 70015, addrMe: socket.connection.localAddress, addrYou: socket.connection.remoteAddress, network: 'mainnet', blockHeight: 1})
   socket.write(version)
   socket.setVersionSent(true)
-  console.log('[version] sent to ' + socket.connection.remoteAddress + '\n')
+  writeLog('[version] sent to ' + socket.connection.remoteAddress)
 }
 
 module.exports = {

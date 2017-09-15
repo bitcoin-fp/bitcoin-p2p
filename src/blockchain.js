@@ -1,5 +1,6 @@
 var level = require('level')
 var thenlevel = require('then-levelup')
+var writeLog = require('./logger').loghs
 
 var headersDB = null
 
@@ -15,8 +16,12 @@ var addBlockHeaders = (headers) => {
         {type: 'put', key: topHeight + 1, value: header}
       ]
       return headersDB.batch(ops)
-      .then(() => ++topHeight)
-      .catch((err) => console.log('Add block header fail.'))
+      .then(() => {
+        topHeight++
+        writeLog('Header [' + topHeight + '] added: ' + header.hash)
+        return topHeight
+      })
+      .catch((err) => writeLog('[Error] Fail in adding block header.'))
     })
   }, Promise.resolve())
 }
