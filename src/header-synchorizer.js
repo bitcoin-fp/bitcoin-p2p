@@ -16,7 +16,7 @@ var handlers = (socket) => (cmd) => {
             socket.write(getheaders)
             writeLog('[getheaders] sent to ' + socket.connection.remoteAddress)
           })
-        }, 5000)
+        }, 3000)
       }).catch((err) => {
         writeLog('[Error] ' + err)
       })
