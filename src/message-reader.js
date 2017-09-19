@@ -67,7 +67,7 @@ var readBlockHeader = (hex) => {
 var readPayload = (command) => (data) => {
   var readers = {
     'version': (data) => {
-      if (data.length === 0) return
+      if (data.length === 0) return {}
       return {
         protocol: readProtocol(data),
         timestamp: readTimestamp(data),
