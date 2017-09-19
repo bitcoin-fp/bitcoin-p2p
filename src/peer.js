@@ -3,6 +3,8 @@ var Exception = require('./exception')
 var writescLog = require('./logger').logsc
 var writehsLog = require('./logger').loghs
 
+var emitter = require('node-singleton-event')
+
 var readyPool = []
 var handshakedPool = []
 
@@ -24,7 +26,10 @@ var popFromReadyPool = () => readyPool.shift()
 var buildHandShakedPool = () => {
   var peerSocket = popFromReadyPool()
   if (peerSocket) peerSocket.connect()
-  else return
+  else {
+    writescLog('[Info] There are no more sockets to handshake.')
+    return
+  }
 
   // check handshake status
   var iter = 0
@@ -37,7 +42,7 @@ var buildHandShakedPool = () => {
     } else if (iter === 3) {
       clearInterval(intervalId)
       peerSocket.disconnect()
-      writescLog('[Warning] Fail in handshake.')
+      writescLog('[Warning] Fail in handshake to discard socket.')
       buildHandShakedPool()
     }
     iter++
@@ -62,6 +67,10 @@ var syncHeaders = () => {
     }
   }
 }
+
+emitter.on('header-sync-error', function () {
+  isSyncingHeaders = false
+})
 
 // var syncBlocks = () => {
 

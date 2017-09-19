@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "level": "^1.7.0",
+    "node-singleton-event": "0.0.4",
     "promise": "^7.1.1",
     "ramda": "^0.23.0",
     "then-levelup": "^1.0.2"

@@ -7,6 +7,8 @@ var headerSynchorizer = require('./header-synchorizer')
 // var addressSynchorizer = require('./address-synchorizer')
 var writeLog = require('./logger').logsc
 
+var emitter = require('node-singleton-event')
+
 function Socket (ip, network) {
   this.ip = ip
   this.network = network
@@ -17,6 +19,8 @@ function Socket (ip, network) {
   this.isVerackBack = false
 
   this.connection = new net.Socket()
+
+  this.type = null
 }
 
 Socket.prototype.connect = function () {
@@ -33,6 +37,8 @@ Socket.prototype.connect = function () {
   this.connection.on('error', (err) => {
     writeLog('[Error] Fail in peer connection ' + _this.ip + '.')
     writeLog(err)
+    writeLog(err.stack)
+    if (_this.type === 'header-synchorizer') emitter.emit('header-sync-error')
   })
 }
 
@@ -45,6 +51,7 @@ Socket.prototype.disconnect = function () {
 // }
 
 Socket.prototype.syncHeaders = function () {
+  this.type = 'header-synchorizer'
   headerSynchorizer.register(this)
 }
 
