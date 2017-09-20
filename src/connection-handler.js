@@ -15,11 +15,6 @@ var handlers = (socket) => (cmd) => {
     },
     'verack': (payload) => {
       socket.setVerackBack(true)
-    },
-    'ping': (payload) => {
-      var pong = msgWriter.write('pong', {network: 'mainnet', nonce: payload.nonce})
-      socket.write(pong)
-      writeLog('[pong] sent to ' + socket.connection.remoteAddress)
     }
   }
   return strategies[cmd]

@@ -49,9 +49,16 @@ var buildHandShakedPool = () => {
   }, 3000)
 }
 
-var pushToHandshakedPool = (peerSocket) => handshakedPool.push(peerSocket)
+var pushToHandshakedPool = (peerSocket) => {
+  peerSocket.keepAlive()
+  handshakedPool.push(peerSocket)
+}
 
 var popFromHandshakedPool = () => handshakedPool.shift()
+
+emitter.on('keep-aliving-error', function () {
+  handshakedPool = handshakedPool.filter((peerSocket) => peerSocket.isAlive())
+})
 
 var isSyncingHeaders = false
 var syncHeaders = () => {

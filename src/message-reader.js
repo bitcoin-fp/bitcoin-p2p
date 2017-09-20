@@ -107,6 +107,9 @@ var readPayload = (command) => (data) => {
     'ping': (data) => {
       return {nonce: utils.readUIntLE(8)(data)}
     },
+    'pong': (data) => {
+      return {nonce: utils.readUIntLE(8)(data)}
+    },
     'addr': (data) => {
       return {}
     }

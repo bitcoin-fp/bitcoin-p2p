@@ -3,6 +3,7 @@ var NETWORK = require('./const').NETWORK
 var PORT = require('./const').PORT
 var connectionHandler = require('./connection-handler')
 var headerSynchorizer = require('./header-synchorizer')
+var keepaliveHandler = require('./keepalive-handler')
 // var blockSynchorizer = require('./block-synchorizer')
 // var addressSynchorizer = require('./address-synchorizer')
 var writeLog = require('./logger').logsc
@@ -20,7 +21,9 @@ function Socket (ip, network) {
 
   this.connection = new net.Socket()
 
-  this.type = null
+  this.status = null
+  this.alive = false
+  this.syncing = false
 }
 
 Socket.prototype.connect = function () {
@@ -31,6 +34,7 @@ Socket.prototype.connect = function () {
     localPort: 8333
   }, () => {
     writeLog('Peer ' + _this.ip + ' connected.')
+    _this.status = 'connection-handling'
     connectionHandler.register(_this)
   })
 
@@ -38,11 +42,15 @@ Socket.prototype.connect = function () {
     writeLog('[Error] Fail in peer connection ' + _this.ip + '.')
     writeLog(err)
     writeLog(err.stack)
-    if (_this.type === 'header-synchorizer') emitter.emit('header-sync-error')
+    _this.alive = false
+    if (_this.status === 'header-syncing') emitter.emit('header-syncing-error')
+    else if (_this.status === 'keep-aliving') emitter.emit('keep-aliving-error')
   })
 }
 
 Socket.prototype.disconnect = function () {
+  this.alive = false
+  this.syncing = false
   this.connection.destroy()
 }
 
@@ -51,7 +59,8 @@ Socket.prototype.disconnect = function () {
 // }
 
 Socket.prototype.syncHeaders = function () {
-  this.type = 'header-synchorizer'
+  this.status = 'header-syncing'
+  this.syncing = true
   headerSynchorizer.register(this)
 }
 
@@ -59,8 +68,22 @@ Socket.prototype.syncHeaders = function () {
 //   addressSynchorizer.register(this)
 // }
 
+Socket.prototype.keepAlive = function () {
+  this.alive = true
+  this.status = 'keep-aliving'
+  keepaliveHandler.register(this)
+}
+
 Socket.prototype.isHandshaked = function () {
   return this.isVersionSent && this.isVersionBack && this.isVerackSent && this.isVerackBack
+}
+
+Socket.prototype.isAlive = function () {
+  return this.alive
+}
+
+Socket.prototype.isSyncing = function () {
+  return this.syncing
 }
 
 Socket.prototype.write = function (bMessage) {

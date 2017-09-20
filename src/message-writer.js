@@ -69,6 +69,18 @@ var getHeaders = (opts) => {
   })
 }
 
+/* Ping
+ * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#ping
+ */
+var ping = (opts) => {
+  var nonce = utils.writeUIntLE(8)(opts.nonce)
+  var payload = utils.bufferConcat([nonce])
+  var header = addMessageHeader(opts.network, 'ping', payload)
+  var message = utils.prefixBy(header)(payload)
+
+  return message
+}
+
 /* Pong
  * Doc => https://en.bitcoin.it/wiki/Protocol_documentation#pong
  */
@@ -135,7 +147,8 @@ var write = (cmd, opts) => {
     getheaders: getHeaders,
     getdata: getData,
     inventory: inventory,
-    pong: pong
+    pong: pong,
+    ping: ping
   }
   return cmds[cmd](opts)
 }
