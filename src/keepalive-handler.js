@@ -2,7 +2,6 @@ var msgReader = require('./message-reader')
 var msgWriter = require('./message-writer')
 var writeLog = require('./logger').logsc
 var crypto = require('crypto')
-var emitter = require('node-singleton-event')
 var utils = require('./utils')
 
 var _nonce = null
@@ -17,15 +16,15 @@ var handlers = (socket) => (cmd) => {
     'pong': (payload) => {
       if (socket.isSyncing()) return
       if (payload.nonce === _nonce) {
+        socket.setStatus(1) // socket is alive
         setTimeout(() => {
-           _nonce = utils.readUIntLE(8)(crypto.randomBytes(8))
+          _nonce = utils.readUIntLE(8)(crypto.randomBytes(8))
           var ping = msgWriter.write('ping', {nonce: _nonce, network: 'mainnet'})
           socket.write(ping)
           writeLog('[ping] sent to ' + socket.connection.remoteAddress)
         }, 5000)
       } else {
         socket.disconnect()
-        emitter.emit('keep-aliving-error')
       }
     }
   }

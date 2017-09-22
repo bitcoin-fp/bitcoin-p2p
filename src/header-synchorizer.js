@@ -36,10 +36,14 @@ var handle = (socket) => (data) => {
 }
 
 var register = (socket) => {
+  socket.setStatus(2) // socket is syncing
   socket.connection.on('data', handle(socket))
   msgWriter.write('getheaders', {protocol: 70015, network: 'mainnet'}).then((getheaders) => {
     socket.write(getheaders)
     writeLog('[getheaders] sent to ' + socket.connection.remoteAddress)
+  })
+  return new Promise((resolve, reject) => {
+    resolve(socket)
   })
 }
 

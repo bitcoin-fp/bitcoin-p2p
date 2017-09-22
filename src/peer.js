@@ -1,105 +1,78 @@
 var Socket = require('./socket')
-var Exception = require('./exception')
 var writescLog = require('./logger').logsc
 var writehsLog = require('./logger').loghs
 
-var emitter = require('node-singleton-event')
+var connectionHandler = require('./connection-handler')
+var keepaliveHandler = require('./keepalive-handler')
+var headerSynchorizer = require('./header-synchorizer')
 
 var readyPool = []
 var handshakedPool = []
-
-var peerSocket = (network) => (ip) => {
-  return new Promise((resolve, reject) => {
-    resolve(new Socket(ip, network))
-  })
-}
-
-var pushToReadyPool = (peerSockets) => {
-  return new Promise((resolve, reject) => {
-    readyPool = readyPool.concat(peerSockets)
-    resolve()
-  })
-}
-
-var popFromReadyPool = () => readyPool.shift()
+var headerSyncPool = []
 
 var buildHandShakedPool = () => {
-  var peerSocket = popFromReadyPool()
-  if (peerSocket) peerSocket.connect()
-  else {
+  if (handshakedPool.length >= 10) return
+
+  var peerSocket = readyPool.shift()
+  if (!peerSocket) {
     writescLog('[Info] There are no more sockets to handshake.')
     return
   }
 
-  // check handshake status
-  var iter = 0
-  var intervalId = setInterval(function () {
-    if (peerSocket.isHandshaked()) {
-      clearInterval(intervalId)
-      pushToHandshakedPool(peerSocket)
-      writescLog('Handshake done. Total: ' + handshakedPool.length + ' socket(s) on stack.')
-      buildHandShakedPool()
-    } else if (iter === 3) {
-      clearInterval(intervalId)
-      peerSocket.disconnect()
-      writescLog('[Warning] Fail in handshake to discard socket.')
-      buildHandShakedPool()
-    }
-    iter++
-  }, 3000)
+  connectionHandler.register(peerSocket).then((socket) => {
+    keepaliveHandler.register(socket)
+    handshakedPool.push(socket)
+    writescLog('Handshake done. Total: ' + handshakedPool.length + ' socket(s) on stack.')
+  })
 }
 
-var pushToHandshakedPool = (peerSocket) => {
-  peerSocket.keepAlive()
-  handshakedPool.push(peerSocket)
-}
-
-var popFromHandshakedPool = () => handshakedPool.shift()
-
-emitter.on('keep-aliving-error', function () {
-  handshakedPool = handshakedPool.filter((peerSocket) => peerSocket.isAlive())
-})
-
-var isSyncingHeaders = false
 var syncHeaders = () => {
-  if (!isSyncingHeaders) {
-    try {
-      isSyncingHeaders = true
-      var peerSocket = popFromHandshakedPool()
-      if (peerSocket) peerSocket.syncHeaders()
-      else throw new Exception('No peer socket found.')
-    } catch (e) {
-      isSyncingHeaders = false
-      writehsLog('[Warning] ' + e.message)
-    }
-  }
-}
+  if (headerSyncPool.length >= 1) return
 
-emitter.on('header-sync-error', function () {
-  isSyncingHeaders = false
-})
+  var handshakedSocket = handshakedPool.shift()
+  if (!handshakedSocket) {
+    writehsLog('[Info] There are no more sockets to sync header.')
+    return
+  } else if (!handshakedSocket.isHealthy()) {
+    writehsLog('[Info] The socket is dead.')
+    return
+  }
+
+  headerSynchorizer.register(handshakedSocket).then((socket) => {
+    headerSyncPool.push(socket)
+    writehsLog('Header sync added. Total: ' + headerSyncPool.length + ' socket(s) on stack.')
+  })
+}
 
 // var syncBlocks = () => {
-
 // }
 
-var connect = () => {
-  console.log('Start syncing with other nodes.')
-
-  buildHandShakedPool()
-  setInterval(syncHeaders, 3000)
-  // syncBlocks()
+var checkPoolHealth = () => {
+  handshakedPool = handshakedPool.filter((socket) => socket.isHealthy())
+  headerSyncPool = headerSyncPool.filter((socket) => socket.isHealthy())
+  writescLog('Health checked. Total: ' + handshakedPool.length + ' socket(s) in Handshake-Pool.')
+  writescLog('Health checked. Total: ' + headerSyncPool.length + ' socket(s) in Header-Sync-Pool.')
 }
 
 var buildPool = (network) => (ips) => {
-  // ips = ['46.166.160.96', '60.251.143.133', '195.154.69.36', '45.32.75.82'] //test code
-  // ips = ['104.237.2.189']
-  // ips = ['88.99.170.66']
-  var peerSockets = ips.map(peerSocket(network))
-  Promise.all(peerSockets).then(pushToReadyPool).then(connect).catch(console.log)
-  return peerSockets
+  ips.forEach((ip) => {
+    var socket = new Socket(ip, network)
+    socket.connect()
+    .then(() => {
+      readyPool.push(socket)
+      writescLog('[Info] There are ' + readyPool.length + ' sockets available.')
+    })
+    .catch(console.log)
+  })
+}
+
+var init = () => {
+  setInterval(buildHandShakedPool, 10000)
+  setInterval(syncHeaders, 3000)
+  setInterval(checkPoolHealth, 10000)
 }
 
 module.exports = {
-  buildPool: buildPool
+  buildPool: buildPool,
+  init: init
 }

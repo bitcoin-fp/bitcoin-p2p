@@ -6,15 +6,13 @@ var handlers = (socket) => (cmd) => {
   var strategies = {
     'version': (payload) => {
       writeLog('The remote node has ' + payload.blockHeight + ' block(s).')
-      socket.setVersionBack(true)
 
       var verack = msgWriter.write('verack', {network: 'mainnet'})
       socket.write(verack)
-      socket.setVerackSent(true)
       writeLog('[verack] sent to ' + socket.connection.remoteAddress)
     },
     'verack': (payload) => {
-      socket.setVerackBack(true)
+      socket.setStatus(0) // Handshake is done.
     }
   }
   return strategies[cmd]
@@ -34,8 +32,15 @@ var register = (socket) => {
   socket.connection.on('data', handle(socket))
   var version = msgWriter.write('version', {protocol: 70015, addrMe: socket.connection.localAddress, addrYou: socket.connection.remoteAddress, network: 'mainnet', blockHeight: 1})
   socket.write(version)
-  socket.setVersionSent(true)
   writeLog('[version] sent to ' + socket.connection.remoteAddress)
+  return new Promise((resolve, reject) => {
+    var i = setInterval(() => {
+      if (socket.isHandshakDone()) {
+        clearInterval(i)
+        resolve(socket)
+      }
+    }, 3000)
+  })
 }
 
 module.exports = {
